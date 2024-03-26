@@ -18,6 +18,17 @@ class Line {
   String toString() => 'Line from $p1 to $p2';
 }
 
+
+
+
+List <List<Custom_Point>> upperBridgePoints = [];
+List <List<Custom_Point>> lowerBridgePoints = [];
+List <List<Custom_Point>> quadrilateral = [];
+List <List<Custom_Point>> removedPoints = [];
+List <Custom_Point> cvhull = [];
+List <List<List<Custom_Point>>> Ordered = [];
+animatedPoints fin = animatedPoints(upperBridgePoints,lowerBridgePoints,quadrilateral,removedPoints,cvhull,Ordered);
+
 bool pointInPolygon(Custom_Point point, List<Custom_Point> polygon) {
   int numVertices = polygon.length;
   double x = point.x, y = point.y;
@@ -259,8 +270,10 @@ Line findUpperBridge(List<Custom_Point> points, Line medianLine) {
 
 Line findLowerBridge(List <Custom_Point> points, Line medianLine) {
   
-  if(points.length == 2)
+  if(points.length == 2){
     return Line(points[0], points[1]);
+  }
+    
   List<Line> pairs = [];
   List<Custom_Point> candidates = [];
   for (int i = 0; i < points.length - 1; i += 2) {
@@ -359,22 +372,36 @@ Line findLowerBridge(List <Custom_Point> points, Line medianLine) {
 
 List<Custom_Point> upperHull(Custom_Point pUmin, Custom_Point pUmax, List <Custom_Point> points) {
   if(points.length <= 2){
+    upperBridgePoints.add(points);
+    Ordered.add([points,[],[]]);
     return points;
   }
   List<Custom_Point> pointsCopy = List.from(points);
   Line medianLine = findMedianLine(points);
   Line ubridge = findUpperBridge(pointsCopy,medianLine);
+  List<Custom_Point> temp = [];
+  temp.add(pUmin);
+
+  temp.add(ubridge.p1);
+  temp.add(ubridge.p2);
+
+  temp.add(pUmax);
+  fin.upperBridgePoints.add(temp);
   List<Custom_Point> pointsToRemove = [];
   List<Custom_Point> uBridgePoints = [];
   uBridgePoints.add(pUmin);
   uBridgePoints.add(ubridge.p1);
   uBridgePoints.add(ubridge.p2);
   uBridgePoints.add(pUmax);
+  uBridgePoints.add(pUmin);
+
+  fin.quadrilateral.add(uBridgePoints);
   for (int i = 0; i < pointsCopy.length; i++) {
         if (pointInPolygon(pointsCopy[i], uBridgePoints) && !uBridgePoints.contains(pointsCopy[i])) {
           pointsToRemove.add(pointsCopy[i]);
         }
   }
+  fin.removedPoints.add(pointsToRemove);
   for (int i = 0; i < pointsToRemove.length; i++) {
         pointsCopy.remove(pointsToRemove[i]);
   }
@@ -404,27 +431,40 @@ List<Custom_Point> upperHull(Custom_Point pUmin, Custom_Point pUmax, List <Custo
   upperHullFinal.addAll(uBridgePoints);
   upperHullFinal.addAll(upperHullLeft);
   upperHullFinal.addAll(upperHullRight);
+  Ordered.add([temp,uBridgePoints,pointsToRemove]);
   return upperHullFinal;
 }
 
 List<Custom_Point> lowerHull(Custom_Point pLmin, Custom_Point pLmax, List <Custom_Point> points) {
   if(points.length <= 2){
+    lowerBridgePoints.add(points);
+    Ordered.add([points,[],[]]);
     return points;
   }
   List<Custom_Point> pointsCopy = List.from(points);
   Line medianLine = findMedianLine(points);
   Line lbridge = findLowerBridge(pointsCopy,medianLine);
+  List<Custom_Point> temp = [];
+  temp.add(pLmin);
+  temp.add(lbridge.p1);
+  temp.add(lbridge.p2);
+  temp.add(pLmax);
+  fin.lowerBridgePoints.add(temp);
   List<Custom_Point> pointsToRemove = [];
   List<Custom_Point> lBridgePoints = [];
   lBridgePoints.add(pLmin);
   lBridgePoints.add(lbridge.p1);
   lBridgePoints.add(lbridge.p2);
   lBridgePoints.add(pLmax);
+  lBridgePoints.add(pLmin);
+  fin.quadrilateral.add(lBridgePoints);
   for (int i = 0; i < pointsCopy.length; i++) {
         if (pointInPolygon(pointsCopy[i], lBridgePoints) && !lBridgePoints.contains(pointsCopy[i])) {
           pointsToRemove.add(pointsCopy[i]);
         }
   }
+  fin.removedPoints.add(pointsToRemove);
+  Ordered.add([temp,lBridgePoints,pointsToRemove]);
   for (int i = 0; i < pointsToRemove.length; i++) {
         pointsCopy.remove(pointsToRemove[i]);
   }
@@ -454,11 +494,11 @@ List<Custom_Point> lowerHull(Custom_Point pLmin, Custom_Point pLmax, List <Custo
   lowerHullFinal.addAll(lBridgePoints);
   lowerHullFinal.addAll(lowerHullLeft);
   lowerHullFinal.addAll(lowerHullRight);
+  
   return lowerHullFinal;
 }
 
-List<Custom_Point> kirkPatrick(List<Point> data) {
-  List<Custom_Point> points = data.map((point) => Custom_Point(point.x.toDouble(), point.y.toDouble())).toList();
+animatedPoints kirkPatrick(List<Custom_Point> points) {
 
   points.sort((a, b) => a.x.compareTo(b.x));
   Custom_Point pumin = findPumin(points);
@@ -481,14 +521,47 @@ List<Custom_Point> kirkPatrick(List<Point> data) {
   upperHullP = upperHullP.toSet().toList();
   lowerHullP = removeConsecutiveDuplicates(lowerHullP);
   upperHullP = removeConsecutiveDuplicates(upperHullP);
-
-  List<Custom_Point> convexHull = [];
+  List <Custom_Point> convexHull = [];
   convexHull.addAll(upperHullP);
   convexHull.addAll(lowerHullP);
   convexHull.add(upperHullP[0]);
-  print("Convex Hull Points: ");
-  print(convexHull);
-  return convexHull;
+  // for(int i = 0; i < convexHull.length; i++) {
+  //   fin.convexHull.add(convexHull[i]);
+  // }
+  
+  // print("Convex Hull Points: ");
+  // print(convexHull);
+  fin.final_convex_hull = convexHull;
+  return(fin);
 }
 
-
+// void main() { 
+//   List<Point> points = [
+//   Point(30, 70), Point(53, 32), Point(74, 66), Point(40, 80), Point(17, 25),
+//   Point(80, 45), Point(10, 90), Point(60, 10), Point(90, 20), Point(45, 55),
+//   Point(85, 85), Point(25, 35), Point(15, 60), Point(70, 5), Point(5, 10),
+//   Point(50, 75), Point(95, 50), Point(20, 30), Point(35, 65), Point(75, 15),
+//   Point(55, 80), Point(65, 40), Point(45, 20), Point(10, 40), Point(80, 75),
+//   Point(30, 50), Point(55, 5), Point(85, 30), Point(25, 75), Point(60, 90),
+//   Point(40, 10), Point(90, 60), Point(70, 35), Point(50, 30), Point(15, 5),
+//   Point(20, 45), Point(75, 80), Point(5, 85), Point(35, 15), Point(95, 10),
+//   Point(10, 65), Point(45, 50), Point(60, 25), Point(25, 10), Point(50, 60),
+//   Point(80, 20), Point(30, 95), Point(55, 70), Point(85, 40), Point(70, 85),
+//   Point(40, 55), Point(15, 20), Point(5, 50), Point(45, 5), Point(90, 90),
+//   Point(20, 80), Point(75, 25), Point(35, 45), Point(95, 75), Point(10, 15),
+//   Point(65, 80), Point(25, 60), Point(60, 35), Point(50, 10), Point(80, 65),
+//   Point(30, 25), Point(55, 90), Point(85, 15), Point(70, 50), Point(40, 40),
+//   Point(15, 75), Point(5, 20), Point(45, 95), Point(90, 30), Point(20, 5),
+//   Point(75, 60), Point(35, 80), Point(95, 20), Point(10, 50), Point(65, 15),
+//   Point(25, 90), Point(60, 55), Point(50, 35), Point(85, 70), Point(70, 95),
+//   Point(40, 25), Point(15, 10), Point(5, 65), Point(45, 30), Point(90, 5),
+//   Point(20, 50), Point(75, 85), Point(35, 10), Point(95, 45), Point(10, 80),
+//   Point(65, 25), Point(25, 5), Point(60, 70), Point(50, 45), Point(85, 10),
+//   Point(70, 40), Point(40, 95), Point(15, 50), Point(5, 85), Point(45, 15),
+//   Point(90, 60), Point(20, 35), Point(75, 10), Point(35, 60), Point(95, 30)
+// ];
+//   // List<Custom_Point> convexHull = kirkPatrick(points);
+//   print(fin);
+//   print("Convex Hull Points: ");
+//   // print(convexHull);
+// }
