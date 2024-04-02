@@ -57,13 +57,14 @@ List<Custom_Point> convexHull(List<Custom_Point> points) {
   }
 
   int p = l, q;
+  List<Custom_Point> temp1=[];
   do {
     hull.add(points[p]);
-    q = (p + 1) % n;
+    q = (p + 1) % points.length;
     List<Custom_Point> temp=[];
     temp.add(points[q]);
-    for (int i = 0; i < n; i++) {
-      if (orientation(points[p], points[i], points[q]) == 2) {
+    for (int i = 0; i < points.length; i++) {
+      if (orientation(points[p], points[i], points[q]) == 2 ) {
         q = i;
         temp.add(points[q]);
       }
@@ -81,8 +82,8 @@ List<Custom_Point> convexHull(List<Custom_Point> points) {
     jmfin.updates.add(temp);
     p = q;
     List<Custom_Point> pointsToRemove = [];
+    List<Custom_Point> pointsCopy = List.from(points);
     if (hull.length >= 3) {
-      List<Custom_Point> pointsCopy = List.from(points);
       for (int i = 0; i < pointsCopy.length; i++) {
         if (pointInPolygon(pointsCopy[i], hull)) {
           pointsToRemove.add(pointsCopy[i]);

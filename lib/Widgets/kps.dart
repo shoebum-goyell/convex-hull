@@ -18,9 +18,6 @@ class Line {
   String toString() => 'Line from $p1 to $p2';
 }
 
-
-
-
 List <List<Custom_Point>> upperBridgePoints = [];
 List <List<Custom_Point>> lowerBridgePoints = [];
 List <List<Custom_Point>> quadrilateral = [];
@@ -488,8 +485,8 @@ List<Custom_Point> lowerHull(Custom_Point pLmin, Custom_Point pLmax, List <Custo
     }
   }
   tRight.add(lBridgePoints[2]);
-  List<Custom_Point> lowerHullLeft = upperHull(pLmax,lBridgePoints[2],tRight);
-  List<Custom_Point> lowerHullRight = upperHull(lBridgePoints[1],pLmin,tLeft);
+  List<Custom_Point> lowerHullLeft = lowerHull(pLmax,lBridgePoints[2],tRight);
+  List<Custom_Point> lowerHullRight = lowerHull(lBridgePoints[1],pLmin,tLeft);
   List<Custom_Point> lowerHullFinal = [];
   lowerHullFinal.addAll(lBridgePoints);
   lowerHullFinal.addAll(lowerHullLeft);
@@ -505,6 +502,10 @@ animatedPoints kirkPatrick(List<Custom_Point> points) {
   Custom_Point pumax = findPumax(points);
   Custom_Point plmin = findPlmin(points);
   Custom_Point plmax = findPlmax(points);
+  print(pumin);
+  print(pumax);
+  print(plmin);
+  print(plmax);
   Line medianLine = findMedianLine(points);
 
   List<Custom_Point> upperHullP = upperHull(pumin, pumax, points);
