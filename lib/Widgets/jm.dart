@@ -5,7 +5,17 @@ import 'Custom_Point.dart';
 
 List<List<Custom_Point>> updates = [];
 List<List<Custom_Point>> removedP = [];
-animatedPointsjm jmfin = animatedPointsjm(updates,removedP);
+
+
+findjm(points){
+  updates = [];
+  removedP = [];
+  convexHull(points);
+  print(updates.length);
+  print(removedP.length);
+  animatedPointsjm jmfin = animatedPointsjm(updates,removedP);
+  return jmfin;
+}
 
 int orientation(Custom_Point p, Custom_Point q, Custom_Point r) {
   double val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
@@ -79,7 +89,8 @@ List<Custom_Point> convexHull(List<Custom_Point> points) {
       }
     }
     temp.insert(0,points[p]);
-    jmfin.updates.add(temp);
+    updates.add(temp);
+    print(updates.length);
     p = q;
     List<Custom_Point> pointsToRemove = [];
     List<Custom_Point> pointsCopy = List.from(points);
@@ -92,7 +103,7 @@ List<Custom_Point> convexHull(List<Custom_Point> points) {
       for(int i = 0; i < hull.length; i++) {
         pointsToRemove.add(hull[i]);
       }
-      jmfin.removedP.add(pointsToRemove);
+      removedP.add(pointsToRemove);
       for (int i = 0; i < pointsToRemove.length; i++) {
         pointsCopy.remove(pointsToRemove[i]);
       }
@@ -106,10 +117,6 @@ List<Custom_Point> convexHull(List<Custom_Point> points) {
   return hull;
 }
 
-animatedPointsjm jarvisMarch(List<Custom_Point> points) {  
-  convexHull(points);
-  return jmfin;
-}
 
 
 

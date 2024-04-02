@@ -24,7 +24,19 @@ List <List<Custom_Point>> quadrilateral = [];
 List <List<Custom_Point>> removedPoints = [];
 List <Custom_Point> cvhull = [];
 List <List<List<Custom_Point>>> Ordered = [];
-animatedPoints fin = animatedPoints(upperBridgePoints,lowerBridgePoints,quadrilateral,removedPoints,cvhull,Ordered);
+
+
+findkps(points){
+  upperBridgePoints = [];
+  lowerBridgePoints = [];
+  quadrilateral = [];
+  removedPoints = [];
+  cvhull = [];
+  Ordered = [];
+  kirkPatrick(points);
+  animatedPoints fin = animatedPoints(upperBridgePoints,lowerBridgePoints,quadrilateral,removedPoints,cvhull,Ordered);
+  return fin;
+}
 
 bool pointInPolygon(Custom_Point point, List<Custom_Point> polygon) {
   int numVertices = polygon.length;
@@ -383,7 +395,7 @@ List<Custom_Point> upperHull(Custom_Point pUmin, Custom_Point pUmax, List <Custo
   temp.add(ubridge.p2);
 
   temp.add(pUmax);
-  fin.upperBridgePoints.add(temp);
+  upperBridgePoints.add(temp);
   List<Custom_Point> pointsToRemove = [];
   List<Custom_Point> uBridgePoints = [];
   uBridgePoints.add(pUmin);
@@ -392,13 +404,13 @@ List<Custom_Point> upperHull(Custom_Point pUmin, Custom_Point pUmax, List <Custo
   uBridgePoints.add(pUmax);
   uBridgePoints.add(pUmin);
 
-  fin.quadrilateral.add(uBridgePoints);
+  quadrilateral.add(uBridgePoints);
   for (int i = 0; i < pointsCopy.length; i++) {
         if (pointInPolygon(pointsCopy[i], uBridgePoints) && !uBridgePoints.contains(pointsCopy[i])) {
           pointsToRemove.add(pointsCopy[i]);
         }
   }
-  fin.removedPoints.add(pointsToRemove);
+  removedPoints.add(pointsToRemove);
   for (int i = 0; i < pointsToRemove.length; i++) {
         pointsCopy.remove(pointsToRemove[i]);
   }
@@ -446,7 +458,7 @@ List<Custom_Point> lowerHull(Custom_Point pLmin, Custom_Point pLmax, List <Custo
   temp.add(lbridge.p1);
   temp.add(lbridge.p2);
   temp.add(pLmax);
-  fin.lowerBridgePoints.add(temp);
+  lowerBridgePoints.add(temp);
   List<Custom_Point> pointsToRemove = [];
   List<Custom_Point> lBridgePoints = [];
   lBridgePoints.add(pLmin);
@@ -454,13 +466,13 @@ List<Custom_Point> lowerHull(Custom_Point pLmin, Custom_Point pLmax, List <Custo
   lBridgePoints.add(lbridge.p2);
   lBridgePoints.add(pLmax);
   lBridgePoints.add(pLmin);
-  fin.quadrilateral.add(lBridgePoints);
+  quadrilateral.add(lBridgePoints);
   for (int i = 0; i < pointsCopy.length; i++) {
         if (pointInPolygon(pointsCopy[i], lBridgePoints) && !lBridgePoints.contains(pointsCopy[i])) {
           pointsToRemove.add(pointsCopy[i]);
         }
   }
-  fin.removedPoints.add(pointsToRemove);
+  removedPoints.add(pointsToRemove);
   Ordered.add([temp,lBridgePoints,pointsToRemove]);
   for (int i = 0; i < pointsToRemove.length; i++) {
         pointsCopy.remove(pointsToRemove[i]);
@@ -495,8 +507,9 @@ List<Custom_Point> lowerHull(Custom_Point pLmin, Custom_Point pLmax, List <Custo
   return lowerHullFinal;
 }
 
-animatedPoints kirkPatrick(List<Custom_Point> points) {
+void kirkPatrick(List<Custom_Point> points) {
 
+  print(Ordered.length);
   points.sort((a, b) => a.x.compareTo(b.x));
   Custom_Point pumin = findPumin(points);
   Custom_Point pumax = findPumax(points);
@@ -532,8 +545,9 @@ animatedPoints kirkPatrick(List<Custom_Point> points) {
   
   // print("Convex Hull Points: ");
   // print(convexHull);
-  fin.final_convex_hull = convexHull;
-  return(fin);
+  cvhull= convexHull;
+  print(Ordered.length);
+
 }
 
 // void main() { 
