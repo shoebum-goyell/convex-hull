@@ -1,6 +1,7 @@
 import 'package:convex_hull/Widgets/graph.dart';
 import 'package:convex_hull/colors.dart';
 import 'package:flutter/material.dart';
+import 'dart:html' as html;
 
 void main() {
   runApp(const MyApp());
@@ -59,6 +60,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
+  openInWindow(String uri, String name) {
+    print("hello");
+    html.window.open(uri, name);
+  }
+
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
@@ -76,6 +82,16 @@ class _MyHomePageState extends State<MyHomePage> {
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title, style: TextStyle(color: Colors.white),),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                openInWindow("https://shoebum-goyell.github.io/daa_documentation/", "yo");
+              },
+              child: Icon(Icons.help_outline, color: Colors.white,),),
+          )
+        ],
       ),
 
       body: const Graph(),

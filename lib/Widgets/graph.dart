@@ -1,16 +1,25 @@
+
+
+import 'dart:convert';
+import 'dart:html';
 import 'dart:js_util';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:convex_hull/colors.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/widgets.dart';
-
+import 'package:file_picker/file_picker.dart';
 import 'kps.dart';
 import 'jm.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'Custom_Point.dart';
+
+
+
+
 
 class Graph extends StatefulWidget {
   const Graph({super.key});
@@ -20,6 +29,8 @@ class Graph extends StatefulWidget {
 }
 
 class _GraphState extends State<Graph> {
+  int seconds = 0;
+
 
   List<Custom_Point> data = [
     // Outline
@@ -74,10 +85,16 @@ class _GraphState extends State<Graph> {
   List<Custom_Point> quadrilateral = [];
   List<List<Custom_Point>> removedPoints = [];
   List<List<List<Custom_Point>>> Ordered = [];
+  bool maxkps = false;
+  bool maxjm = false;
   int splice = 0;
   Custom_Point p = Custom_Point(0, 0);
   Custom_Point q = Custom_Point(0, 0);
   List<Custom_Point> currline = [Custom_Point(0, 0), Custom_Point(0, 0)];
+  double maxx = 110;
+  double maxy = 110;
+  String kpstime = "";
+  String jmtime = "";
 
   List<List<Custom_Point>> updates = [];
   List<Custom_Point> hull = [];
@@ -90,6 +107,8 @@ class _GraphState extends State<Graph> {
   double pointy = 0;
 
   int numberOfPoints = 10; // Default number of points
+
+
 
   void setNumberOfPoints(String value) {
     setState(() {
@@ -114,6 +133,7 @@ class _GraphState extends State<Graph> {
   void addPointx(String point) {
     setState(() {
       pointx = double.parse(point);
+
     });
   }
 
@@ -126,13 +146,27 @@ class _GraphState extends State<Graph> {
   void addPoint() {
     setState(() {
       data.add(Custom_Point(pointx, pointy));
+      maxx = data.map((e) => e.x).reduce(max)*1.932;
+      maxy = data.map((e) => e.y).reduce(max)*1.2;
     });
   }
 
+  void startTimer()async{
+
+  }
+
   void runAlgo() async {
-    resetwithoutclear();
+    resetwithoutclearkps();
+    DateTime currtime = DateTime.now();
     animatedPoints ap = findkps(data);
+    DateTime endtime = DateTime.now();
     setState(() {
+      if(endtime.difference(currtime).inMicroseconds >=10000){
+        kpstime = "${endtime.difference(currtime).inMilliseconds} milli seconds";
+      }
+      else{
+        kpstime = "${endtime.difference(currtime).inMicroseconds} micro seconds";
+      }
       Ordered = ap.Ordered;
     });
     setState(() {
@@ -173,20 +207,21 @@ class _GraphState extends State<Graph> {
       removedPoints = [];
       Ordered = [];
       splice = 0;
-      p = Custom_Point(0, 0);
-      q = Custom_Point(0, 0);
-      currline = [Custom_Point(0, 0), Custom_Point(0, 0)];
-      updates = [];
-      hull = [];
-      removedP = [];
-      temp = [];
     });
   }
 
   void runAlgojm() async {
-    resetwithoutclear();
+    resetwithoutclearjm();
+    DateTime currtime = DateTime.now();
     animatedPointsjm jm = findjm(data);
+    DateTime endtime = DateTime.now();
     setState(() {
+      if(endtime.difference(currtime).inMicroseconds >=10000){
+        jmtime = "${endtime.difference(currtime).inMilliseconds} milli seconds";
+      }
+      else{
+        jmtime = "${endtime.difference(currtime).inMicroseconds} micro seconds";
+      }
       updates = jm.updates;
       removedP = jm.removedP;
       hull.add(updates[0][0]);
@@ -222,6 +257,8 @@ class _GraphState extends State<Graph> {
 
   void clearPoints() {
     setState(() {
+      maxx = 110;
+      maxy = 110;
       data = [];
       final_convex_hull = [];
       upperBridgePoints = [];
@@ -240,7 +277,7 @@ class _GraphState extends State<Graph> {
     });
   }
 
-  void resetwithoutclear(){
+  void resetwithoutclearkps(){
     setState(() {
       final_convex_hull = [];
       upperBridgePoints = [];
@@ -249,6 +286,10 @@ class _GraphState extends State<Graph> {
       removedPoints = [];
       Ordered = [];
       splice = 0;
+    });
+  }
+  void resetwithoutclearjm(){
+    setState(() {
       p = Custom_Point(0, 0);
       q = Custom_Point(0, 0);
       currline = [Custom_Point(0, 0), Custom_Point(0, 0)];
@@ -259,99 +300,174 @@ class _GraphState extends State<Graph> {
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child:Padding(padding: EdgeInsets.all(20),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            width: 400,
-            child: SfCartesianChart(
-              plotAreaBackgroundColor: kColorPlotBack,
-              backgroundColor: kColorSecondary,
-              margin: EdgeInsets.all(20),
-              primaryXAxis: const NumericAxis(
-                minimum: -10,
-                maximum: 110,
-                  title: AxisTitle(text: 'X'),
-                  crossesAt: 0,
-                  placeLabelsNearAxisLine: false),
-              primaryYAxis: const NumericAxis(
-                minimum: -10,
-                maximum: 110,
-                  title: AxisTitle(text: 'Y'),
-                  crossesAt: 0,
-                  placeLabelsNearAxisLine: false),
-              series: <CartesianSeries>[
-                ScatterSeries<Custom_Point, double>(
-                  animationDuration: 0,
-                  color: kColorPoints,
-                  dataSource: data,
-                  xValueMapper: (Custom_Point data, _) => data.x as double?,
-                  yValueMapper: (Custom_Point data, _) => data.y,
-                ),
-                ...upperBridgePoints.map((List<Custom_Point> points) {
-                  return LineSeries<Custom_Point, double>(
-                      animationDuration: 0,
-                      dataSource: points,
-                      xValueMapper: (Custom_Point data, _) => data.x as double?,
-                      yValueMapper: (Custom_Point data, _) => data.y,
-                      color: kColorGreen,
-                      width: 2);
-                }),
-                LineSeries<Custom_Point, double>(
-                  animationDuration: 0,
-                  dataSource: quadrilateral,
-                  xValueMapper: (Custom_Point data, _) => data.x as double?,
-                  yValueMapper: (Custom_Point data, _) => data.y,
-                  color: kColorRed,
-                ),
-                ...removedPoints.map((List<Custom_Point> points) {
-                  return ScatterSeries<Custom_Point, double>(
-                    animationDuration: 0,
+          Expanded(
+            child: Column(
+              children: [
+                 !maxjm?Stack(
+                   children: [
+                     Container(
+                        height: maxkps? MediaQuery.of(context).size.height/1.2 : null,
+                       child: SfCartesianChart(
+                         title: ChartTitle(text: 'Kirk Patrick Seidel Algorithm'),
+                        plotAreaBackgroundColor: kColorPlotBack,
+                        backgroundColor: kColorSecondary,
+                        margin: EdgeInsets.all(20),
+                        primaryXAxis:  NumericAxis(
+                            minimum: -10,
+                            maximum: maxx,
+                            title: AxisTitle(text: 'X'),
+                            crossesAt: 0,
+                            placeLabelsNearAxisLine: false),
+                        primaryYAxis:  NumericAxis(
+                            minimum: -10,
+                            maximum: maxy,
+                            title: AxisTitle(text: 'Y'),
+                            crossesAt: 0,
+                            placeLabelsNearAxisLine: false),
+                        series: <CartesianSeries>[
+                          ScatterSeries<Custom_Point, double>(
+                            animationDuration: 0,
+                            color: kColorPoints,
+                            dataSource: data,
+                            xValueMapper: (Custom_Point data, _) => data.x as double?,
+                            yValueMapper: (Custom_Point data, _) => data.y,
+                          ),
+                          ...upperBridgePoints.map((List<Custom_Point> points) {
+                            return LineSeries<Custom_Point, double>(
+                                animationDuration: 0,
+                                dataSource: points,
+                                xValueMapper: (Custom_Point data, _) => data.x as double?,
+                                yValueMapper: (Custom_Point data, _) => data.y,
+                                color: kColorGreen,
+                                width: 2);
+                          }),
+                          LineSeries<Custom_Point, double>(
+                            animationDuration: 0,
+                            dataSource: quadrilateral,
+                            xValueMapper: (Custom_Point data, _) => data.x as double?,
+                            yValueMapper: (Custom_Point data, _) => data.y,
+                            color: kColorRed,
+                          ),
+                          ...removedPoints.map((List<Custom_Point> points) {
+                            return ScatterSeries<Custom_Point, double>(
+                              animationDuration: 0,
 
-                    dataSource: points,
-                    xValueMapper: (Custom_Point data, _) => data.x as double?,
-                    yValueMapper: (Custom_Point data, _) => data.y,
-                    color: kColorRed,
-                    // pointColorMapper: (Custom_Point data, _) => Colors.blue,
-                    // pointBorderColorMapper: (Custom_Point data, _) => Colors.blue,
-                    // borderWidth: 2
-                  );
-                }),
+                              dataSource: points,
+                              xValueMapper: (Custom_Point data, _) => data.x as double?,
+                              yValueMapper: (Custom_Point data, _) => data.y,
+                              color: kColorRed,
+                              // pointColorMapper: (Custom_Point data, _) => Colors.blue,
+                              // pointBorderColorMapper: (Custom_Point data, _) => Colors.blue,
+                              // borderWidth: 2
+                            );
+                          }),
 
-                LineSeries<Custom_Point, double>(
-                    animationDuration: 0,
-                    dataSource: final_convex_hull,
-                    xValueMapper: (Custom_Point data, _) => data.x as double?,
-                    yValueMapper: (Custom_Point data, _) => data.y,
-                    color: kColorConvexHull,
-                    width: 4),
-                LineSeries<Custom_Point, double>(
-                    animationDuration: 100,
-                    dataSource: hull,
-                    xValueMapper: (Custom_Point data, _) => data.x as double?,
-                    yValueMapper: (Custom_Point data, _) => data.y,
-                    color: kColorGreen,
-                    width: 2),
-                LineSeries<Custom_Point, double>(
-                    animationDuration: 0,
-                    dataSource: [p, q],
-                    xValueMapper: (Custom_Point data, _) => data.x as double?,
-                    yValueMapper: (Custom_Point data, _) => data.y,
-                    color: kColorRed,
-                    width: 2),
-                ScatterSeries<Custom_Point, double>(
-                  animationDuration: 0,
-                  dataSource: temp,
-                  xValueMapper: (Custom_Point data, _) => data.x as double?,
-                  yValueMapper: (Custom_Point data, _) => data.y,
-                  color: kColorRed,
-                ),
-              ],
+                          LineSeries<Custom_Point, double>(
+                              animationDuration: 0,
+                              dataSource: final_convex_hull,
+                              xValueMapper: (Custom_Point data, _) => data.x as double?,
+                              yValueMapper: (Custom_Point data, _) => data.y,
+                              color: kColorConvexHull,
+                              width: 4),
+
+                        ],),
+                     ),
+                     Positioned(child: GestureDetector(
+                        onTap: (){
+                          setState(() {
+                           maxkps = !maxkps;
+                          });},
+                         child: !maxkps? Icon(Icons.expand_circle_down):Icon(Icons.arrow_circle_up) ),bottom: 10,right: 10,),
+                     Positioned(child: Text(
+                       kpstime,
+                       style: TextStyle(fontSize:14),
+                     ),
+                       top:10,
+                       right: 10,
+                     )
+                   ],
+                 ):Container(),
+                 SizedBox(height: 20,),
+                 !maxkps? Stack(
+                   children: [
+                     Container(
+                       height: maxjm? MediaQuery.of(context).size.height/1.2 : null,
+                       child: SfCartesianChart(
+                         title: ChartTitle(text: 'Jarvis March Algorithm'),
+                        plotAreaBackgroundColor: kColorPlotBack,
+                        backgroundColor: kColorSecondary,
+                        margin: EdgeInsets.all(20),
+                        primaryXAxis:  NumericAxis(
+                            minimum: -10,
+                            maximum: maxx,
+                            title: AxisTitle(text: 'X'),
+                            crossesAt: 0,
+                            placeLabelsNearAxisLine: false),
+                        primaryYAxis:  NumericAxis(
+                            minimum: -10,
+                            maximum: maxy,
+                            title: AxisTitle(text: 'Y'),
+                            crossesAt: 0,
+                            placeLabelsNearAxisLine: false),
+                        series: <CartesianSeries>[
+                          ScatterSeries<Custom_Point, double>(
+                            animationDuration: 0,
+                            color: kColorPoints,
+                            dataSource: data,
+                            xValueMapper: (Custom_Point data, _) => data.x as double?,
+                            yValueMapper: (Custom_Point data, _) => data.y,
+                          ),
+                          LineSeries<Custom_Point, double>(
+                              animationDuration: 100,
+                              dataSource: hull,
+                              xValueMapper: (Custom_Point data, _) => data.x as double?,
+                              yValueMapper: (Custom_Point data, _) => data.y,
+                              color: kColorGreen,
+                              width: 2),
+                          LineSeries<Custom_Point, double>(
+                              animationDuration: 0,
+                              dataSource: [p, q],
+                              xValueMapper: (Custom_Point data, _) => data.x as double?,
+                              yValueMapper: (Custom_Point data, _) => data.y,
+                              color: kColorRed,
+                              width: 2),
+                          ScatterSeries<Custom_Point, double>(
+                            animationDuration: 0,
+                            dataSource: temp,
+                            xValueMapper: (Custom_Point data, _) => data.x as double?,
+                            yValueMapper: (Custom_Point data, _) => data.y,
+                            color: kColorRed,
+                          ),
+                        ],
+                                       ),
+                     ),
+                     Positioned(child: GestureDetector(
+                         onTap: (){
+                           setState(() {
+                             maxjm = !maxjm;
+                           });},
+                         child: !maxjm? Icon(Icons.expand_circle_down):Icon(Icons.arrow_circle_up) ),bottom: 10,right: 10,),
+                     Positioned(child: Text(
+                       jmtime,
+                       style: TextStyle(fontSize: 14),
+                     ),
+                       top:10,
+                       right: 10,
+                     )
+                   ],
+                 ): Container(),],
             ),
           ),
+          SizedBox(width: 40),
+          !maxkps || !maxjm? Column(children: [
           SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -398,6 +514,38 @@ class _GraphState extends State<Graph> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
+                onPressed: () async {
+                  FilePickerResult? result = await FilePicker.platform.pickFiles(
+                    type: FileType.custom,
+                    allowedExtensions: ['txt'],
+                  );
+                  if (result != null) {
+                    clearPoints();
+                    List<Custom_Point> pointsfromfile= [];
+                    Uint8List bytes = result.files.single.bytes!;
+                    String file = utf8.decode(bytes);
+                    List<String> lines = file.split('\n');
+                    for (String line in lines){
+                      if(line.isNotEmpty){
+                        String x = line.substring(1, line.indexOf(','));
+                        String y = line.substring(line.indexOf(',') + 1, line.length-1);
+                        Custom_Point point = Custom_Point(double.parse(x), double.parse(y));
+                        pointsfromfile.add(point);
+                      }
+                    }
+                    setState(() {
+                      maxx = pointsfromfile.map((e) => e.x).reduce(max)*1.932;
+                      maxy = pointsfromfile.map((e) => e.y).reduce(max)*1.2;
+                      data = pointsfromfile;
+                    });
+                  } else {
+                    // User canceled the picker
+                  }
+                },
+                child: const Text('Add points from file'),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
                 onPressed: clearPoints,
                 child: const Text('Clear Points'),
               ),
@@ -422,7 +570,6 @@ class _GraphState extends State<Graph> {
                 ),
               ),
               SizedBox(width: 10),
-              // Button to generate random points
               ElevatedButton(
                 style: ButtonStyle(
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
@@ -437,7 +584,6 @@ class _GraphState extends State<Graph> {
               ),
             ],
           ),
-
           SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -476,6 +622,25 @@ class _GraphState extends State<Graph> {
             ],
           ),
           SizedBox(height: 20),
+            ElevatedButton(
+              style: ButtonStyle(
+                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                backgroundColor: MaterialStateProperty.all<Color>(kColorPrimary),
+              ),
+              onPressed: (){
+                runAlgo();
+                runAlgojm();
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: const Text('Run simultaneously', style: TextStyle(color: Colors.white)),
+              ),
+            ),
+          SizedBox(height: 20),
           Container(width: 400, child:
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -490,7 +655,7 @@ class _GraphState extends State<Graph> {
                 });
               }),
             ],
-          )),
+          )),]):Container()
         ],
       )),
     );
